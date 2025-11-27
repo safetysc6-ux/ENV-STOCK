@@ -26,8 +26,8 @@
                         sans: ['Prompt', 'Inter', 'sans-serif'],
                     },
                     colors: {
-                        primary: '#4f46e5', // Indigo 600
-                        secondary: '#10b981', // Emerald 500
+                        primary: '#4f46e5', // Indigo 600 (Theme)
+                        action: '#2563eb',  // Blue 600 (Buttons)
                         surface: '#f8fafc',
                     }
                 }
@@ -223,8 +223,9 @@
                                             {{ item.qty }} <span class="text-[10px] font-normal text-gray-400">ชิ้น</span>
                                         </div>
                                     </div>
-                                    <button @click="openWithdrawModal(item)" class="bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg text-xs font-bold active:bg-indigo-100">
-                                        เบิก
+                                    <!-- ปุ่มเบิกเปลี่ยนเป็นสีน้ำเงินเข้มเพื่อให้เด่นชัด -->
+                                    <button @click="openWithdrawModal(item)" class="bg-blue-600 text-white shadow-md shadow-blue-200 px-4 py-1.5 rounded-xl text-xs font-bold active:scale-95 transition">
+                                        เบิกออก
                                     </button>
                                 </div>
                             </div>
@@ -452,7 +453,7 @@
                             title: 'Offline Mode?',
                             text: 'ไม่สามารถดึงข้อมูลได้ กรุณาตรวจสอบอินเทอร์เน็ต',
                             icon: 'warning',
-                            confirmButtonColor: '#4f46e5'
+                            confirmButtonColor: '#2563eb'
                         });
                     } finally {
                         isLoading.value = false;
@@ -481,10 +482,11 @@
                 };
 
                 // Modals (Custom Styled for Mobile)
+                // เปลี่ยนสีปุ่มยืนยันเป็นสีฟ้าเข้ม (bg-blue-600) เพื่อให้ตัดกับธีมสีม่วง
                 const modalConfig = {
                     customClass: {
                         popup: 'rounded-2xl',
-                        confirmButton: 'bg-indigo-600 rounded-xl px-4 py-2 text-sm',
+                        confirmButton: 'bg-blue-600 text-white rounded-xl px-4 py-2 text-sm shadow-md',
                         cancelButton: 'bg-gray-100 text-gray-600 rounded-xl px-4 py-2 text-sm'
                     },
                     buttonsStyling: false
@@ -496,7 +498,7 @@
                         title: '<span class="text-lg font-bold">เพิ่มสินค้าใหม่</span>',
                         html: `
                             <div class="space-y-3 pt-2 text-left">
-                                <input id="sw-name" class="w-full bg-gray-50 border-0 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" placeholder="ชื่อสินค้า *">
+                                <input id="sw-name" class="w-full bg-gray-50 border-0 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500" placeholder="ชื่อสินค้า *">
                                 <div class="grid grid-cols-2 gap-2">
                                     <input id="sw-cat" class="bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="หมวดหมู่">
                                     <input id="sw-pr" class="bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="เลข PR">
@@ -512,6 +514,8 @@
                         `,
                         showCancelButton: true,
                         confirmButtonText: 'บันทึก',
+                        // Override สีปุ่มเฉพาะ Modal นี้ให้เป็นสีเขียวสำหรับการ "เพิ่ม"
+                        confirmButtonColor: '#10b981', 
                         preConfirm: async () => {
                             const name = document.getElementById('sw-name').value;
                             const qty = document.getElementById('sw-qty').value;
@@ -537,7 +541,7 @@
                         title: `<div class="text-left"><div class="text-xs text-gray-400 font-normal">เบิกออก</div><div class="text-lg font-bold text-gray-800">${item.name}</div></div>`,
                         html: `
                             <div class="space-y-3 pt-2 text-left">
-                                <div class="bg-indigo-50 text-indigo-700 p-2 rounded-lg text-center text-xs font-bold">คงเหลือในคลัง: ${item.qty} ชิ้น</div>
+                                <div class="bg-blue-50 text-blue-700 p-2 rounded-lg text-center text-xs font-bold">คงเหลือในคลัง: ${item.qty} ชิ้น</div>
                                 <input id="w-qty" type="number" class="w-full bg-gray-50 border-0 rounded-xl p-3 text-sm font-bold text-lg text-center" placeholder="ระบุจำนวน *" min="1">
                                 <input id="w-act" class="w-full bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="กิจกรรม/เหตุผล">
                                 <div class="grid grid-cols-2 gap-2">
@@ -604,7 +608,7 @@
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonText: 'ลบเลย',
-                        confirmButtonColor: '#ef4444'
+                        confirmButtonColor: '#ef4444' // สีแดงสำหรับการลบ
                     });
                     if(isConfirmed) sendAction({ action: 'delete', id: item.id });
                 };
