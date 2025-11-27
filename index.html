@@ -2,8 +2,8 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Stock Manager App</title>
     
     <link rel="icon" href="data:,">
 
@@ -18,49 +18,61 @@
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#4f46e5', // Indigo 600
+                        secondary: '#10b981', // Emerald 500
+                        surface: '#f8fafc',
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
         body { 
-            font-family: 'Prompt', sans-serif; 
-            background-color: #f8fafc; 
+            background-color: #f1f5f9; 
             color: #1e293b;
             -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
         }
         
-        /* Custom Scrollbar */
+        /* Hide Scrollbar but keep functionality */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Modern Cards */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        }
-
-        .stat-card-gradient {
-            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-        }
-
-        .item-img { object-fit: cover; border-radius: 12px; }
+        /* Safe Area for iPhone X+ */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .pt-safe { padding-top: env(safe-area-inset-top); }
         
-        /* Navigation Animation */
-        .nav-item { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .nav-item.active { 
-            color: #2563eb; 
-            transform: translateY(-4px);
+        /* Animations */
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+        /* Glass Effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
         }
-        .nav-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 4px;
-            height: 4px;
-            background-color: #2563eb;
-            border-radius: 50%;
+
+        /* Card Styles */
+        .app-card {
+            background: white;
+            border-radius: 1.25rem; /* 20px */
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(241, 245, 249, 1);
         }
+
+        .btn-press { transition: transform 0.1s; }
+        .btn-press:active { transform: scale(0.96); }
 
         /* Print Styling */
         @media print {
@@ -68,254 +80,285 @@
             body { background: white; -webkit-print-color-adjust: exact; }
             .no-print { display: none !important; }
             .print-only { display: block !important; }
-            .card { box-shadow: none; border: 1px solid #eee; break-inside: avoid; }
-            table { width: 100%; border-collapse: collapse; }
+            #app { height: auto; overflow: visible; }
+            table { width: 100%; border-collapse: collapse; font-family: 'Sarabun', sans-serif; }
             th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; }
             thead { background-color: #f3f4f6; }
         }
         .print-only { display: none; }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
+<body class="h-screen w-screen overflow-hidden flex flex-col bg-surface">
 
-    <div id="app" class="flex flex-col h-full relative">
+    <div id="app" class="flex flex-col h-full w-full relative">
 
-        <!-- Header (Modern) -->
-        <header class="bg-white/80 backdrop-blur-md sticky top-0 z-20 px-6 py-4 flex justify-between items-center border-b border-gray-100 no-print">
-            <div>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                    Stock Manager
-                </h1>
-                <p class="text-[10px] text-gray-400 font-medium tracking-wide">SYSTEM DASHBOARD</p>
-            </div>
-            <div class="flex gap-3">
-                <button @click="fetchData" class="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:shadow-md transition">
-                    <i class="fa-solid fa-sync-alt" :class="{'fa-spin': isLoading}"></i>
+        <!-- Header (Sticky & Modern) -->
+        <header class="glass sticky top-0 z-30 px-5 pt-safe pb-3 shadow-sm no-print">
+            <div class="flex justify-between items-center mt-2">
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Organization</span>
+                    <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">
+                        Stock Manager
+                    </h1>
+                </div>
+                <button @click="fetchData" class="btn-press w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center text-gray-500 hover:text-indigo-600 transition">
+                    <i class="fa-solid fa-rotate" :class="{'fa-spin': isLoading}"></i>
                 </button>
             </div>
         </header>
 
-        <!-- Main Content -->
-        <main class="flex-1 overflow-y-auto p-4 pb-28 no-scrollbar relative bg-slate-50">
+        <!-- Main Scrollable Area -->
+        <main class="flex-1 overflow-y-auto overflow-x-hidden p-5 pb-32 no-scrollbar scroll-smooth">
             
-            <!-- Loading Overlay -->
-            <div v-if="isLoading" class="absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
-                <div class="relative">
-                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-slate-200"></div>
-                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent absolute top-0"></div>
-                </div>
-                <span class="mt-4 text-sm font-medium text-slate-500 animate-pulse">กำลังซิงค์ข้อมูล...</span>
-            </div>
-
-            <!-- VIEW: DASHBOARD (หน้าสรุปผล) -->
-            <div v-if="currentTab === 'dashboard'" class="space-y-6 fade-in">
+            <!-- Transition Wrapper -->
+            <transition name="fade" mode="out-in">
                 
-                <!-- Overview Stats -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="glass-card p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden">
-                        <div class="absolute right-[-10px] top-[-10px] w-20 h-20 bg-blue-50 rounded-full opacity-50"></div>
-                        <div class="relative z-10 text-gray-500 text-xs font-medium">มูลค่ารวม (บาท)</div>
-                        <div class="relative z-10 text-2xl font-bold text-slate-800">{{ formatNumber(dashboardStats.totalValue) }}</div>
-                        <div class="relative z-10 text-[10px] text-green-500 flex items-center gap-1">
-                            <i class="fa-solid fa-chart-line"></i> ทรัพย์สินทั้งหมด
-                        </div>
-                    </div>
+                <!-- VIEW: DASHBOARD -->
+                <div v-if="currentTab === 'dashboard'" key="dashboard" class="space-y-6">
                     
-                    <div class="glass-card p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden">
-                        <div class="absolute right-[-10px] top-[-10px] w-20 h-20 bg-orange-50 rounded-full opacity-50"></div>
-                        <div class="relative z-10 text-gray-500 text-xs font-medium">เบิกไปแล้ว (ชิ้น)</div>
-                        <div class="relative z-10 text-2xl font-bold text-slate-800">{{ dashboardStats.totalDistributed }}</div>
-                        <div class="relative z-10 text-[10px] text-orange-500 flex items-center gap-1">
-                            <i class="fa-solid fa-box-open"></i> ยอดรวมการเบิก
-                        </div>
-                    </div>
-
-                    <div class="glass-card p-4 rounded-2xl flex flex-col justify-between h-24 relative overflow-hidden">
-                         <div class="text-gray-500 text-xs font-medium">รายการสินค้า</div>
-                         <div class="text-xl font-bold text-slate-800">{{ items.length }} <span class="text-xs font-normal text-gray-400">Items</span></div>
-                    </div>
-
-                    <div class="glass-card p-4 rounded-2xl flex flex-col justify-between h-24 relative overflow-hidden border-l-4" :class="dashboardStats.lowStock > 0 ? 'border-red-500' : 'border-green-500'">
-                        <div class="text-gray-500 text-xs font-medium">ของใกล้หมด</div>
-                        <div class="text-xl font-bold" :class="dashboardStats.lowStock > 0 ? 'text-red-500' : 'text-slate-800'">
-                            {{ dashboardStats.lowStock }} <span class="text-xs font-normal text-gray-400">รายการ</span>
-                        </div>
-                   </div>
-                </div>
-
-                <!-- Category Distribution -->
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-                    <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-layer-group text-blue-500"></i> สัดส่วนหมวดหมู่
-                    </h3>
-                    <div class="space-y-4">
-                        <div v-for="(count, cat) in dashboardStats.categories" :key="cat" class="group">
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="font-medium text-slate-600">{{ cat || 'ไม่ระบุ' }}</span>
-                                <span class="text-slate-400">{{ count }} รายการ</span>
-                            </div>
-                            <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-blue-500 rounded-full transition-all duration-1000 ease-out" :style="{ width: (count / items.length * 100) + '%' }"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Print Action -->
-                <button @click="triggerPrint" class="w-full bg-slate-800 text-white py-4 rounded-2xl shadow-lg shadow-slate-200 active:scale-[0.98] transition-all flex justify-center items-center gap-3">
-                    <i class="fa-solid fa-print text-lg"></i>
-                    <span class="font-medium">พิมพ์รายงานสรุปสต็อก (PDF)</span>
-                </button>
-            </div>
-
-            <!-- VIEW: INVENTORY -->
-            <div v-if="currentTab === 'inventory'" class="space-y-4">
-                <!-- Search Bar -->
-                <div class="sticky top-0 z-10 pb-2 bg-slate-50/95 backdrop-blur">
-                    <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i class="fa-solid fa-search text-gray-400 group-focus-within:text-blue-500 transition"></i>
-                        </div>
-                        <input v-model="searchQuery" type="text" placeholder="ค้นหาชื่อ, รหัส, หมวดหมู่..." 
-                            class="block w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition shadow-sm">
-                    </div>
-                </div>
-
-                <!-- Items List -->
-                <div v-for="item in filteredItems" :key="item.id" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex gap-4 transition-all active:scale-[0.99]">
-                    <div class="w-20 h-20 flex-shrink-0 bg-gray-50 rounded-xl overflow-hidden relative">
-                         <img :src="item.image || NO_IMG_URL" class="w-full h-full object-cover" @error="imgError">
-                         <div v-if="item.qty <= 5" class="absolute top-0 right-0 bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-bl-lg font-bold">LOW</div>
-                    </div>
-                    
-                    <div class="flex-1 min-w-0 flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-start">
-                                <h3 class="font-bold text-slate-800 truncate pr-2">{{ item.name }}</h3>
-                                <span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 font-medium whitespace-nowrap">{{ item.category || 'General' }}</span>
-                            </div>
-                            <div class="text-xs text-slate-400 mt-1">PR: {{ item.prNo || '-' }}</div>
-                        </div>
+                    <!-- Hero Stats Card -->
+                    <div class="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[1.5rem] p-6 text-white shadow-lg shadow-indigo-200 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-10 -mt-10"></div>
+                        <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full -ml-10 -mb-10"></div>
                         
-                        <div class="flex justify-between items-end mt-2">
+                        <div class="relative z-10">
+                            <p class="text-indigo-100 text-xs font-medium mb-1">มูลค่าสินค้าในคลัง</p>
+                            <h2 class="text-3xl font-bold tracking-tight mb-4">฿ {{ formatNumber(dashboardStats.totalValue) }}</h2>
+                            
+                            <div class="flex gap-3">
+                                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-2.5 flex-1 border border-white/10">
+                                    <div class="text-[10px] text-indigo-100 mb-0.5">รายการ</div>
+                                    <div class="font-semibold text-lg">{{ items.length }}</div>
+                                </div>
+                                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-2.5 flex-1 border border-white/10">
+                                    <div class="text-[10px] text-indigo-100 mb-0.5">เบิกจ่าย</div>
+                                    <div class="font-semibold text-lg">{{ dashboardStats.totalDistributed }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alerts / Shortcuts -->
+                    <div v-if="dashboardStats.lowStock > 0" class="app-card p-4 border-l-4 border-red-500 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
                             <div>
-                                <div class="text-[10px] text-slate-400">คงเหลือ</div>
-                                <div class="font-bold text-lg leading-none" :class="getStockColor(item.qty)">{{ item.qty }}</div>
+                                <div class="text-sm font-bold text-gray-800">สินค้าใกล้หมด</div>
+                                <div class="text-xs text-gray-500">{{ dashboardStats.lowStock }} รายการ ต้องเติมสต็อก</div>
                             </div>
-                            <button @click="openWithdrawModal(item)" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-md shadow-blue-200 hover:bg-blue-700 hover:shadow-lg transition">
-                                เบิกออก
-                            </button>
                         </div>
+                        <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
                     </div>
-                </div>
-                
-                <div v-if="filteredItems.length === 0" class="flex flex-col items-center justify-center py-16 text-slate-300">
-                    <i class="fa-solid fa-magnifying-glass text-4xl mb-3"></i>
-                    <p class="text-sm">ไม่พบรายการที่ค้นหา</p>
-                </div>
-            </div>
 
-            <!-- VIEW: HISTORY -->
-            <div v-if="currentTab === 'history'" class="space-y-4">
-                <h2 class="text-lg font-bold text-slate-800 px-1">ประวัติการเคลื่อนไหว</h2>
-                <div v-for="(log, index) in historyLogs" :key="index" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
-                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
-                    <div class="pl-3">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="font-bold text-slate-700 text-sm">{{ log.itemName }}</span>
-                            <span class="bg-red-50 text-red-600 text-xs font-bold px-2 py-1 rounded-lg">-{{ log.qty }}</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-[10px] text-slate-400 mb-3">
-                            <i class="fa-regular fa-clock"></i> {{ formatDate(log.timestamp) }}
-                        </div>
-                        <div class="bg-slate-50 rounded-xl p-3 grid grid-cols-2 gap-y-2 gap-x-4 text-xs">
-                            <div><span class="text-slate-400 block text-[10px]">กิจกรรม</span> {{ log.activity }}</div>
-                            <div><span class="text-slate-400 block text-[10px]">ผู้รับ</span> {{ log.receiver }}</div>
-                            <div class="col-span-2 border-t border-slate-200 pt-2 mt-1 flex gap-2">
-                                <span class="text-slate-400">By:</span> <span class="font-medium text-slate-600">{{ log.requester }}</span>
+                    <!-- Category Chart (CSS) -->
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-700 mb-3 ml-1">สัดส่วนตามหมวดหมู่</h3>
+                        <div class="app-card p-5 space-y-4">
+                            <div v-for="(count, cat) in dashboardStats.categories" :key="cat" class="group">
+                                <div class="flex justify-between items-center text-xs mb-1.5">
+                                    <span class="font-semibold text-gray-600 flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span> {{ cat || 'ทั่วไป' }}
+                                    </span>
+                                    <span class="text-gray-400 font-mono">{{ count }}</span>
+                                </div>
+                                <div class="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-indigo-500 rounded-full transition-all duration-1000 ease-out" 
+                                         :style="{ width: (count / items.length * 100) + '%' }"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Print Button -->
+                    <button @click="triggerPrint" class="btn-press w-full bg-white text-gray-700 border border-gray-200 py-4 rounded-2xl font-semibold text-sm shadow-sm flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-print text-gray-400"></i> พิมพ์รายงาน PDF
+                    </button>
                 </div>
-            </div>
 
-            <!-- VIEW: ADMIN -->
-            <div v-if="currentTab === 'admin'" class="space-y-4">
-                <button @click="openAddModal" class="w-full bg-emerald-500 text-white py-4 rounded-2xl shadow-lg shadow-emerald-200 font-semibold text-sm hover:bg-emerald-600 transition flex justify-center items-center gap-2">
-                    <i class="fa-solid fa-plus"></i> เพิ่มสินค้าใหม่
-                </button>
+                <!-- VIEW: INVENTORY -->
+                <div v-if="currentTab === 'inventory'" key="inventory" class="space-y-4">
+                    <!-- Search Input -->
+                    <div class="sticky top-0 z-20 pb-2">
+                        <div class="relative shadow-sm">
+                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input v-model="searchQuery" type="text" placeholder="ค้นหาสินค้า..." 
+                                class="w-full pl-11 pr-4 py-3.5 bg-white border-none rounded-2xl text-sm text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500/20 outline-none transition shadow-sm">
+                        </div>
+                    </div>
 
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div v-for="(item, idx) in items" :key="item.id" class="p-4 flex items-center gap-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition">
-                        <div class="w-10 h-10 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden">
-                             <img :src="item.image || NO_IMG_URL" class="w-full h-full object-cover" @error="imgError">
+                    <!-- Filter Chips (Mock UI) -->
+                    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                        <button class="px-4 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-medium whitespace-nowrap shadow-sm">ทั้งหมด</button>
+                        <button class="px-4 py-1.5 rounded-full bg-white text-gray-500 text-xs font-medium whitespace-nowrap border border-gray-100">ใกล้หมด</button>
+                        <button class="px-4 py-1.5 rounded-full bg-white text-gray-500 text-xs font-medium whitespace-nowrap border border-gray-100">เสื้อผ้า</button>
+                    </div>
+
+                    <!-- Items Grid -->
+                    <div class="space-y-3">
+                        <div v-for="item in filteredItems" :key="item.id" class="app-card p-3 flex gap-3 btn-press relative overflow-hidden">
+                            <!-- Image -->
+                            <div class="w-20 h-20 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden relative border border-gray-50">
+                                <img :src="item.image || NO_IMG_URL" class="w-full h-full object-cover" @error="imgError">
+                                <div v-if="item.qty <= 5" class="absolute inset-0 bg-red-500/20 flex items-center justify-center">
+                                    <span class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">Low</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div class="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                                <div>
+                                    <div class="flex justify-between items-start">
+                                        <h4 class="font-bold text-gray-800 text-sm truncate pr-4">{{ item.name }}</h4>
+                                        <span class="text-[10px] text-gray-400 font-mono">{{ item.category }}</span>
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 mt-0.5 truncate">{{ item.detail || 'ไม่มีรายละเอียด' }}</p>
+                                </div>
+                                
+                                <div class="flex justify-between items-end mt-2">
+                                    <div>
+                                        <div class="text-[10px] text-gray-400 font-medium">คงเหลือ</div>
+                                        <div class="font-bold text-base leading-none" :class="getStockColor(item.qty)">
+                                            {{ item.qty }} <span class="text-[10px] font-normal text-gray-400">ชิ้น</span>
+                                        </div>
+                                    </div>
+                                    <button @click="openWithdrawModal(item)" class="bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg text-xs font-bold active:bg-indigo-100">
+                                        เบิก
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="font-medium text-sm text-slate-700 truncate">{{ item.name }}</div>
-                            <div class="text-[10px] text-slate-400">Stock: {{ item.qty }} | {{ formatNumber(item.price) }} บ.</div>
+
+                        <div v-if="filteredItems.length === 0" class="flex flex-col items-center justify-center py-20 text-gray-300">
+                            <i class="fa-solid fa-box-open text-4xl mb-3 opacity-50"></i>
+                            <p class="text-sm">ไม่พบรายการ</p>
                         </div>
-                        <div class="flex gap-2">
-                            <button @click="openEditModal(item)" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100">
+                    </div>
+                </div>
+
+                <!-- VIEW: HISTORY -->
+                <div v-if="currentTab === 'history'" key="history" class="space-y-4">
+                    <h3 class="text-sm font-bold text-gray-700 ml-1">รายการล่าสุด</h3>
+                    
+                    <div class="space-y-4 relative">
+                        <!-- Timeline line -->
+                        <div class="absolute left-[19px] top-4 bottom-4 w-0.5 bg-gray-200"></div>
+
+                        <div v-for="(log, index) in historyLogs" :key="index" class="relative pl-12">
+                            <!-- Dot -->
+                            <div class="absolute left-0 top-1 w-10 h-10 rounded-full bg-white border-2 border-indigo-100 flex items-center justify-center z-10 shadow-sm">
+                                <i class="fa-solid fa-box-open text-indigo-500 text-xs"></i>
+                            </div>
+
+                            <div class="app-card p-3.5">
+                                <div class="flex justify-between items-start mb-1">
+                                    <span class="font-bold text-gray-800 text-sm truncate">{{ log.itemName }}</span>
+                                    <span class="text-red-500 text-xs font-bold bg-red-50 px-1.5 py-0.5 rounded">-{{ log.qty }}</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-[10px] text-gray-400 mb-2">
+                                    <i class="fa-regular fa-clock"></i> {{ formatDate(log.timestamp) }}
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-2 text-xs text-gray-600 space-y-1">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-400">ผู้รับ:</span> <span>{{ log.receiver }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-400">กิจกรรม:</span> <span>{{ log.activity }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: ADMIN -->
+                <div v-if="currentTab === 'admin'" key="admin" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <button @click="openAddModal" class="btn-press bg-emerald-500 text-white p-4 rounded-2xl shadow-lg shadow-emerald-200 flex flex-col items-center justify-center gap-2 h-28">
+                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                <i class="fa-solid fa-plus text-lg"></i>
+                            </div>
+                            <span class="font-bold text-sm">เพิ่มสินค้า</span>
+                        </button>
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center h-28">
+                            <span class="text-xs text-gray-400">สถานะระบบ</span>
+                            <span class="text-green-500 font-bold text-sm mt-1"><i class="fa-solid fa-circle text-[8px] mr-1"></i> ออนไลน์</span>
+                            <span class="text-[10px] text-gray-400 mt-2">v2.0.1 Mobile</span>
+                        </div>
+                    </div>
+
+                    <h3 class="text-sm font-bold text-gray-700 ml-1 mt-4">รายการสินค้าทั้งหมด</h3>
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50 overflow-hidden">
+                        <div v-for="item in items" :key="item.id" class="p-3 flex items-center gap-3 active:bg-gray-50 transition">
+                            <img :src="item.image || NO_IMG_URL" class="w-10 h-10 rounded-lg object-cover bg-gray-100" @error="imgError">
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-gray-800 truncate">{{ item.name }}</div>
+                                <div class="text-[10px] text-gray-400">{{ item.id }} • {{ item.qty }} in stock</div>
+                            </div>
+                            <button @click="openEditModal(item)" class="w-8 h-8 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center">
                                 <i class="fa-solid fa-pen text-xs"></i>
                             </button>
-                            <button @click="deleteItem(item)" class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100">
+                            <button @click="deleteItem(item)" class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
                                 <i class="fa-solid fa-trash text-xs"></i>
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
 
+            </transition>
         </main>
 
-        <!-- Bottom Navigation (Modern Glass) -->
-        <nav class="absolute bottom-6 left-4 right-4 h-16 bg-white/90 backdrop-blur-lg rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/50 flex justify-around items-center px-2 z-20 no-print">
-            <button @click="currentTab = 'dashboard'" :class="['nav-item w-12 h-12 flex flex-col items-center justify-center relative', currentTab === 'dashboard' ? 'active' : 'text-slate-400']">
-                <i class="fa-solid fa-chart-pie text-lg mb-0.5"></i>
-            </button>
-            <button @click="currentTab = 'inventory'" :class="['nav-item w-12 h-12 flex flex-col items-center justify-center relative', currentTab === 'inventory' ? 'active' : 'text-slate-400']">
-                <i class="fa-solid fa-box text-lg mb-0.5"></i>
-            </button>
-            <button @click="currentTab = 'history'" :class="['nav-item w-12 h-12 flex flex-col items-center justify-center relative', currentTab === 'history' ? 'active' : 'text-slate-400']">
-                <i class="fa-solid fa-clock-rotate-left text-lg mb-0.5"></i>
-            </button>
-            <button @click="currentTab = 'admin'" :class="['nav-item w-12 h-12 flex flex-col items-center justify-center relative', currentTab === 'admin' ? 'active' : 'text-slate-400']">
-                <i class="fa-solid fa-sliders text-lg mb-0.5"></i>
-            </button>
+        <!-- Bottom Navigation (Floating Glass) -->
+        <nav class="fixed bottom-0 left-0 right-0 glass pb-safe pt-2 px-6 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] no-print">
+            <div class="flex justify-between items-center h-16 max-w-md mx-auto">
+                <button @click="currentTab = 'dashboard'" :class="['flex flex-col items-center gap-1 transition-all duration-300 w-12', currentTab === 'dashboard' ? 'text-indigo-600 -translate-y-1' : 'text-gray-400']">
+                    <i class="fa-solid fa-chart-pie text-xl"></i>
+                    <span class="text-[9px] font-medium" v-if="currentTab === 'dashboard'">Home</span>
+                </button>
+                <button @click="currentTab = 'inventory'" :class="['flex flex-col items-center gap-1 transition-all duration-300 w-12', currentTab === 'inventory' ? 'text-indigo-600 -translate-y-1' : 'text-gray-400']">
+                    <i class="fa-solid fa-box text-xl"></i>
+                    <span class="text-[9px] font-medium" v-if="currentTab === 'inventory'">Stock</span>
+                </button>
+                
+                <!-- Center Action Button (Placeholder for future) -->
+                <div class="w-12 h-12 bg-indigo-600 rounded-full shadow-lg shadow-indigo-300 flex items-center justify-center -mt-6 border-4 border-surface" @click="currentTab = 'inventory'">
+                    <i class="fa-solid fa-qrcode text-white text-lg"></i>
+                </div>
+
+                <button @click="currentTab = 'history'" :class="['flex flex-col items-center gap-1 transition-all duration-300 w-12', currentTab === 'history' ? 'text-indigo-600 -translate-y-1' : 'text-gray-400']">
+                    <i class="fa-solid fa-clock-rotate-left text-xl"></i>
+                    <span class="text-[9px] font-medium" v-if="currentTab === 'history'">History</span>
+                </button>
+                <button @click="currentTab = 'admin'" :class="['flex flex-col items-center gap-1 transition-all duration-300 w-12', currentTab === 'admin' ? 'text-indigo-600 -translate-y-1' : 'text-gray-400']">
+                    <i class="fa-solid fa-user-gear text-xl"></i>
+                    <span class="text-[9px] font-medium" v-if="currentTab === 'admin'">Admin</span>
+                </button>
+            </div>
         </nav>
 
-        <!-- Print Layout (Invisible on Screen) -->
-        <div class="print-only">
-            <div class="text-center mb-6">
-                <h1 class="text-2xl font-bold">รายงานสรุปคลังสินค้า (Stock Report)</h1>
-                <p class="text-sm text-gray-500">พิมพ์เมื่อ: {{ new Date().toLocaleString('th-TH') }}</p>
+        <!-- Loading Overlay -->
+        <div v-if="isLoading" class="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div class="bg-white p-4 rounded-2xl shadow-xl flex flex-col items-center gap-3 animate-bounce-in">
+                <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-xs font-bold text-gray-600">กำลังทำงาน...</span>
             </div>
-            
-            <div class="grid grid-cols-3 gap-4 mb-6">
-                <div class="border p-2 rounded text-center">
-                    <div class="text-xs text-gray-500">มูลค่ารวม</div>
-                    <div class="font-bold">{{ formatNumber(dashboardStats.totalValue) }} บาท</div>
-                </div>
-                <div class="border p-2 rounded text-center">
-                    <div class="text-xs text-gray-500">จำนวนรายการ</div>
-                    <div class="font-bold">{{ items.length }} รายการ</div>
-                </div>
-                <div class="border p-2 rounded text-center">
-                    <div class="text-xs text-gray-500">เบิกจ่ายรวม</div>
-                    <div class="font-bold">{{ dashboardStats.totalDistributed }} ชิ้น</div>
-                </div>
-            </div>
+        </div>
 
+        <!-- Print Layout (Hidden on Screen) -->
+        <div class="print-only p-8">
+            <h1 class="text-2xl font-bold mb-2">รายงานสรุปคลังสินค้า</h1>
+            <p class="text-sm text-gray-500 mb-6">พิมพ์เมื่อ: {{ new Date().toLocaleString('th-TH') }}</p>
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>รายการสินค้า</th>
+                        <th>รหัส</th>
+                        <th>รายการ</th>
                         <th>หมวดหมู่</th>
                         <th>PR No.</th>
-                        <th class="text-right">ราคา/ชิ้น</th>
+                        <th class="text-right">ราคา</th>
                         <th class="text-right">คงเหลือ</th>
-                        <th class="text-right">มูลค่าคงเหลือ</th>
+                        <th class="text-right">มูลค่ารวม</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -330,53 +373,46 @@
                     </tr>
                 </tbody>
             </table>
-            
-            <div class="mt-8 pt-4 border-t text-xs text-center text-gray-400">
-                รายงานจากระบบ Stock Manager
+            <div class="mt-4 text-right font-bold text-sm">
+                มูลค่ารวมทั้งหมด: {{ formatNumber(dashboardStats.totalValue) }} บาท
             </div>
         </div>
 
     </div>
 
+    <!-- Script Logic -->
     <script>
         const { createApp, ref, computed, onMounted } = Vue;
         const NO_IMG_URL = "data:image/svg+xml;charset=UTF-8,%3csvg width='150' height='150' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='%23f1f5f9'/%3e%3ctext x='50%25' y='50%25' font-family='sans-serif' font-size='12' fill='%23cbd5e1' dy='.3em' text-anchor='middle'%3eNo Img%3c/text%3e%3c/svg%3e";
 
         createApp({
             setup() {
+                // ==========================================
                 // Config
+                // ==========================================
                 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxfpjflRiEAtrBVA-69Fxgzb_RPGbAVHPpKxC7bkNyr4gaelpLmG-g2se48VBaV56dm/exec";
                 const USE_MOCK_DATA = false;
 
                 // State
-                const currentTab = ref('dashboard'); // Start at Dashboard
+                const currentTab = ref('dashboard');
                 const items = ref([]);
                 const historyLogs = ref([]);
                 const isLoading = ref(false);
                 const searchQuery = ref('');
 
-                // Computed: Dashboard Stats
+                // Computed
                 const dashboardStats = computed(() => {
                     let totalValue = 0;
                     let lowStock = 0;
                     const cats = {};
-                    
                     items.value.forEach(i => {
                         totalValue += (parseInt(i.price || 0) * parseInt(i.qty || 0));
                         if(i.qty <= 5) lowStock++;
                         const c = i.category || 'อื่นๆ';
                         cats[c] = (cats[c] || 0) + 1;
                     });
-
-                    // คำนวณยอดเบิกจาก History (เฉพาะจำนวนที่เป็นบวก)
                     const totalDist = historyLogs.value.reduce((sum, log) => sum + (parseInt(log.qty) || 0), 0);
-
-                    return {
-                        totalValue,
-                        lowStock,
-                        categories: cats,
-                        totalDistributed: totalDist
-                    };
+                    return { totalValue, lowStock, categories: cats, totalDistributed: totalDist };
                 });
 
                 const filteredItems = computed(() => {
@@ -391,17 +427,8 @@
 
                 // Utilities
                 const formatNumber = (num) => new Intl.NumberFormat('th-TH').format(num);
-                const getStockColor = (qty) => {
-                    if (qty <= 5) return 'text-red-500';
-                    if (qty <= 20) return 'text-orange-500';
-                    return 'text-emerald-600';
-                };
-                const formatDate = (d) => {
-                    if(!d) return '-';
-                    return new Date(d).toLocaleString('th-TH', { 
-                        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
-                    });
-                };
+                const getStockColor = (qty) => qty <= 5 ? 'text-red-500' : (qty <= 20 ? 'text-orange-500' : 'text-emerald-600');
+                const formatDate = (d) => !d ? '-' : new Date(d).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
                 const imgError = (e) => e.target.src = NO_IMG_URL;
                 const fileToBase64 = (file) => new Promise((res, rej) => {
                     const r = new FileReader();
@@ -410,7 +437,7 @@
                     r.onerror = e => rej(e);
                 });
 
-                // Actions
+                // API
                 const fetchData = async () => {
                     isLoading.value = true;
                     try {
@@ -421,7 +448,12 @@
                             historyLogs.value = data.history;
                         }
                     } catch (e) {
-                        Swal.fire('Connection Error', 'กรุณาตรวจสอบอินเทอร์เน็ต', 'error');
+                        Swal.fire({
+                            title: 'Offline Mode?',
+                            text: 'ไม่สามารถดึงข้อมูลได้ กรุณาตรวจสอบอินเทอร์เน็ต',
+                            icon: 'warning',
+                            confirmButtonColor: '#4f46e5'
+                        });
                     } finally {
                         isLoading.value = false;
                     }
@@ -430,17 +462,17 @@
                 const sendAction = async (payload) => {
                     isLoading.value = true;
                     try {
-                        await fetch(WEBAPP_URL, {
-                            method: 'POST',
-                            body: JSON.stringify(payload)
-                        });
+                        await fetch(WEBAPP_URL, { method: 'POST', body: JSON.stringify(payload) });
                         await fetchData();
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'บันทึกสำเร็จ',
-                            showConfirmButton: false,
-                            timer: 1500
+                        const Toast = Swal.mixin({
+                            toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
+                            timerProgressBar: true,
+                            didOpen: (toast) => {
+                                toast.addEventListener('mouseenter', Swal.stopTimer)
+                                toast.addEventListener('mouseleave', Swal.resumeTimer)
+                            }
                         });
+                        Toast.fire({ icon: 'success', title: 'บันทึกสำเร็จ' });
                     } catch (e) {
                         Swal.fire('Error', e.message, 'error');
                     } finally {
@@ -448,38 +480,45 @@
                     }
                 };
 
-                // Modals
+                // Modals (Custom Styled for Mobile)
+                const modalConfig = {
+                    customClass: {
+                        popup: 'rounded-2xl',
+                        confirmButton: 'bg-indigo-600 rounded-xl px-4 py-2 text-sm',
+                        cancelButton: 'bg-gray-100 text-gray-600 rounded-xl px-4 py-2 text-sm'
+                    },
+                    buttonsStyling: false
+                };
+
                 const openAddModal = async () => {
                     const { value } = await Swal.fire({
+                        ...modalConfig,
                         title: '<span class="text-lg font-bold">เพิ่มสินค้าใหม่</span>',
                         html: `
-                            <div class="text-left space-y-3 pt-2">
-                                <input id="sw-name" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="ชื่อสินค้า *">
+                            <div class="space-y-3 pt-2 text-left">
+                                <input id="sw-name" class="w-full bg-gray-50 border-0 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" placeholder="ชื่อสินค้า *">
                                 <div class="grid grid-cols-2 gap-2">
-                                    <input id="sw-cat" class="bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none" placeholder="หมวดหมู่">
-                                    <input id="sw-pr" class="bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none" placeholder="เลข PR">
+                                    <input id="sw-cat" class="bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="หมวดหมู่">
+                                    <input id="sw-pr" class="bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="เลข PR">
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <input id="sw-price" type="number" class="bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none" placeholder="ราคา/ชิ้น">
-                                    <input id="sw-qty" type="number" class="bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none" placeholder="จำนวน *">
+                                    <input id="sw-price" type="number" class="bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="ราคา">
+                                    <input id="sw-qty" type="number" class="bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="จำนวน *">
                                 </div>
-                                <input type="file" id="sw-file" accept="image/*" class="text-sm text-slate-500">
+                                <div class="bg-gray-50 p-2 rounded-xl">
+                                    <input type="file" id="sw-file" accept="image/*" class="text-xs text-gray-500 w-full">
+                                </div>
                             </div>
                         `,
                         showCancelButton: true,
-                        confirmButtonColor: '#10b981',
                         confirmButtonText: 'บันทึก',
                         preConfirm: async () => {
                             const name = document.getElementById('sw-name').value;
                             const qty = document.getElementById('sw-qty').value;
                             const file = document.getElementById('sw-file').files[0];
-                            if(!name || !qty) return Swal.showValidationMessage('กรุณากรอกชื่อและจำนวน');
-                            
+                            if(!name || !qty) return Swal.showValidationMessage('ระบุชื่อและจำนวน');
                             let img64 = null, mime = null;
-                            if(file) {
-                                mime = file.type;
-                                img64 = await fileToBase64(file);
-                            }
+                            if(file) { mime = file.type; img64 = await fileToBase64(file); }
                             return {
                                 action: 'add', name, qty: parseInt(qty),
                                 category: document.getElementById('sw-cat').value,
@@ -494,20 +533,22 @@
 
                 const openWithdrawModal = async (item) => {
                     const { value } = await Swal.fire({
-                        title: `<div class="text-lg font-bold text-slate-700">${item.name}</div>`,
+                        ...modalConfig,
+                        title: `<div class="text-left"><div class="text-xs text-gray-400 font-normal">เบิกออก</div><div class="text-lg font-bold text-gray-800">${item.name}</div></div>`,
                         html: `
-                            <div class="text-left space-y-3">
-                                <div class="bg-blue-50 text-blue-600 p-2 rounded-lg text-center text-sm font-medium">คงเหลือ: ${item.qty} ชิ้น</div>
-                                <input id="w-qty" type="number" class="w-full p-3 border rounded-xl" placeholder="จำนวนที่เบิก *" min="1">
-                                <input id="w-act" class="w-full p-3 border rounded-xl" placeholder="ชื่อกิจกรรม">
-                                <input id="w-req" class="w-full p-3 border rounded-xl" placeholder="ผู้เบิก">
-                                <input id="w-rec" class="w-full p-3 border rounded-xl" placeholder="ผู้รับของ">
-                                <input id="w-eid" class="w-full p-3 border rounded-xl" placeholder="รหัสพนักงาน">
+                            <div class="space-y-3 pt-2 text-left">
+                                <div class="bg-indigo-50 text-indigo-700 p-2 rounded-lg text-center text-xs font-bold">คงเหลือในคลัง: ${item.qty} ชิ้น</div>
+                                <input id="w-qty" type="number" class="w-full bg-gray-50 border-0 rounded-xl p-3 text-sm font-bold text-lg text-center" placeholder="ระบุจำนวน *" min="1">
+                                <input id="w-act" class="w-full bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="กิจกรรม/เหตุผล">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input id="w-req" class="bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="ผู้เบิก">
+                                    <input id="w-rec" class="bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="ผู้รับ">
+                                </div>
+                                <input id="w-eid" class="w-full bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="รหัสพนักงาน">
                             </div>
                         `,
                         showCancelButton: true,
-                        confirmButtonColor: '#2563eb',
-                        confirmButtonText: 'ยืนยันการเบิก',
+                        confirmButtonText: 'ยืนยันเบิก',
                         preConfirm: () => {
                             const qty = document.getElementById('w-qty').value;
                             if(!qty || qty <= 0 || qty > item.qty) return Swal.showValidationMessage('จำนวนไม่ถูกต้อง');
@@ -524,19 +565,20 @@
                 };
 
                 const openEditModal = async (item) => {
-                     const { value } = await Swal.fire({
-                        title: 'แก้ไขสินค้า',
+                    const { value } = await Swal.fire({
+                        ...modalConfig,
+                        title: 'แก้ไขข้อมูล',
                         html: `
-                            <div class="text-left space-y-2 pt-2">
-                                <label class="text-xs text-gray-500">ชื่อสินค้า</label>
-                                <input id="e-name" class="w-full border p-2 rounded-lg" value="${item.name}">
+                            <div class="space-y-2 pt-2 text-left text-sm">
+                                <label class="text-xs text-gray-400 ml-1">ชื่อสินค้า</label>
+                                <input id="e-name" class="w-full bg-gray-50 border-0 rounded-lg p-2" value="${item.name}">
                                 <div class="grid grid-cols-2 gap-2">
-                                    <div><label class="text-xs text-gray-500">หมวดหมู่</label><input id="e-cat" class="w-full border p-2 rounded-lg" value="${item.category||''}"></div>
-                                    <div><label class="text-xs text-gray-500">PR</label><input id="e-pr" class="w-full border p-2 rounded-lg" value="${item.prNo||''}"></div>
+                                    <div><label class="text-xs text-gray-400 ml-1">หมวดหมู่</label><input id="e-cat" class="w-full bg-gray-50 border-0 rounded-lg p-2" value="${item.category||''}"></div>
+                                    <div><label class="text-xs text-gray-400 ml-1">PR No.</label><input id="e-pr" class="w-full bg-gray-50 border-0 rounded-lg p-2" value="${item.prNo||''}"></div>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <div><label class="text-xs text-gray-500">ราคา</label><input id="e-price" type="number" class="w-full border p-2 rounded-lg" value="${item.price||0}"></div>
-                                    <div><label class="text-xs text-gray-500">จำนวน</label><input id="e-qty" type="number" class="w-full border p-2 rounded-lg" value="${item.qty}"></div>
+                                    <div><label class="text-xs text-gray-400 ml-1">ราคา</label><input id="e-price" type="number" class="w-full bg-gray-50 border-0 rounded-lg p-2" value="${item.price||0}"></div>
+                                    <div><label class="text-xs text-gray-400 ml-1">จำนวน</label><input id="e-qty" type="number" class="w-full bg-gray-50 border-0 rounded-lg p-2" value="${item.qty}"></div>
                                 </div>
                             </div>
                         `,
@@ -556,12 +598,13 @@
 
                 const deleteItem = async (item) => {
                     const { isConfirmed } = await Swal.fire({
-                        title: 'ลบรายการ?',
-                        text: item.name,
+                        ...modalConfig,
+                        title: 'ลบรายการนี้?',
+                        text: `ยืนยันลบ "${item.name}"`,
                         icon: 'warning',
                         showCancelButton: true,
-                        confirmButtonColor: '#ef4444',
-                        confirmButtonText: 'ลบเลย'
+                        confirmButtonText: 'ลบเลย',
+                        confirmButtonColor: '#ef4444'
                     });
                     if(isConfirmed) sendAction({ action: 'delete', id: item.id });
                 };
