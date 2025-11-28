@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Stock Manager App</title>
+    <title>Stock_ENV ของรางวัล</title>
     
     <link rel="icon" href="data:,">
 
@@ -500,7 +500,11 @@
                             <div class="space-y-3 pt-2 text-left">
                                 <input id="sw-name" class="w-full bg-gray-50 border-0 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500" placeholder="ชื่อสินค้า *">
                                 <div class="grid grid-cols-2 gap-2">
-                                    <input id="sw-cat" class="bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="หมวดหมู่">
+                                    <select id="sw-cat" class="bg-gray-50 border-0 rounded-xl p-3 text-sm w-full">
+                                        <option value="" disabled selected>เลือกหมวดหมู่</option>
+                                        <option value="ของใช้">ของใช้</option>
+                                        <option value="ของแจก">ของแจก</option>
+                                    </select>
                                     <input id="sw-pr" class="bg-gray-50 border-0 rounded-xl p-3 text-sm" placeholder="เลข PR">
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
@@ -577,7 +581,13 @@
                                 <label class="text-xs text-gray-400 ml-1">ชื่อสินค้า</label>
                                 <input id="e-name" class="w-full bg-gray-50 border-0 rounded-lg p-2" value="${item.name}">
                                 <div class="grid grid-cols-2 gap-2">
-                                    <div><label class="text-xs text-gray-400 ml-1">หมวดหมู่</label><input id="e-cat" class="w-full bg-gray-50 border-0 rounded-lg p-2" value="${item.category||''}"></div>
+                                    <div>
+                                        <label class="text-xs text-gray-400 ml-1">หมวดหมู่</label>
+                                        <select id="e-cat" class="w-full bg-gray-50 border-0 rounded-lg p-2">
+                                            <option value="ของใช้" ${item.category === 'ของใช้' ? 'selected' : ''}>ของใช้</option>
+                                            <option value="ของแจก" ${item.category === 'ของแจก' ? 'selected' : ''}>ของแจก</option>
+                                        </select>
+                                    </div>
                                     <div><label class="text-xs text-gray-400 ml-1">PR No.</label><input id="e-pr" class="w-full bg-gray-50 border-0 rounded-lg p-2" value="${item.prNo||''}"></div>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
@@ -627,4 +637,3 @@
     </script>
 </body>
 </html>
-
